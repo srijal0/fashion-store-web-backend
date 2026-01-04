@@ -19,5 +19,5 @@ async function startServer() {
     console.log(`app is running on: http://localhost:${PORT}`)
   })
 }
-
+// Start the server
 startServer();
