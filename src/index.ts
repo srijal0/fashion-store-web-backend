@@ -1,14 +1,18 @@
+//for web
 import app from "./app";
 import { PORT } from "./config";
 import { connectDatabase } from "./database/mongodb";
 
-
 async function startServer() {
-  await connectDatabase();
-  app.listen(
-    PORT, () => {
-    console.log(`app is running on: http://localhost:${PORT}`)
-  })
+  try {
+    await connectDatabase();
+    app.listen(Number(PORT), () => {
+      console.log(`✅ App is running on: http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
 }
 
 startServer();
@@ -17,7 +21,8 @@ startServer();
 
 
 
-//for mobile
+
+// for mobile
 // import express, { Application } from "express";
 // import bodyParser from "body-parser";
 // import dotenv from "dotenv";

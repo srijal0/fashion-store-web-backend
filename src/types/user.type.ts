@@ -21,10 +21,10 @@ export const UserSchema = z.object({
   password: z.string().min(8),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  profileImage: z.string().optional(),  
+  profileImage: z.string().optional(),
   role: z.enum(["user", "admin"]).default("user"),
-  bio: z.string().optional(),        // ✅ Must be here
-  phone: z.string().optional(),      // ✅ Must be here
+  bio: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 export type UserType = z.infer<typeof UserSchema>;
