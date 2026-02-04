@@ -1,4 +1,5 @@
-// import { Router } from "express";
+//for mobile
+//// import { Router } from "express";
 // import { AuthController } from "../controllers/auth.controller";
 
 // let authController = new AuthController();
@@ -9,6 +10,8 @@
 
 // export default router;
 
+
+//for web
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
 import { isAuthenticated } from "../middleware/admin.middleware";
@@ -25,5 +28,7 @@ router.post("/register", authController.register);
 // ✅ NEW: Update user profile with optional image
 // PUT /api/auth/:id
 router.put("/:id", isAuthenticated, upload.single("image"), authController.updateUser);
+//ajha ko
+// router.post("/reset-password/:token", authController.resetPassword);
 
 export default router;

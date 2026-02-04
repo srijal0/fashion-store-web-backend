@@ -84,7 +84,6 @@ export class AuthController {
     try {
       console.log("REGISTER BODY:", req.body); // debug
 
-      // Parse data with CreateUserDTO, confirmPassword removed from DTO
       const parsedData = CreateUserDTO.safeParse(req.body);
       if (!parsedData.success) {
         return res.status(400).json({
@@ -109,7 +108,7 @@ export class AuthController {
     }
   };
 
-  // Login user
+  // ✅ Fixed Login user
   login = async (req: Request, res: Response) => {
     try {
       console.log("LOGIN BODY:", req.body); // debug
@@ -128,8 +127,14 @@ export class AuthController {
       return res.status(200).json({
         success: true,
         message: "Login successful",
-        data: user,
         token,
+        data: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,   // 👈 Added role explicitly
+        },
       });
     } catch (error: any) {
       return res.status(error.status ?? 500).json({
@@ -139,14 +144,12 @@ export class AuthController {
     }
   };
 
-  // ✅ NEW: Update user profile
-  // PUT /api/auth/:id
+  // Update user profile
   updateUser = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const currentUser = (req as any).user;
 
-      // Only allow users to update their own profile
       if (currentUser.id !== id) {
         return res.status(403).json({
           success: false,
@@ -156,7 +159,6 @@ export class AuthController {
 
       const { firstName, lastName, email, bio, phone, removeImage } = req.body;
 
-      // Check if user exists
       const existingUser = await UserModel.findById(id);
       if (!existingUser) {
         return res.status(404).json({
@@ -165,7 +167,6 @@ export class AuthController {
         });
       }
 
-      // If email is changing, check if new email already exists
       if (email && email !== existingUser.email) {
         const emailExists = await UserModel.findOne({ email });
         if (emailExists) {
@@ -176,16 +177,13 @@ export class AuthController {
         }
       }
 
-      // Prepare update data
       const updateData: any = {};
-
       if (firstName !== undefined) updateData.firstName = firstName;
       if (lastName !== undefined) updateData.lastName = lastName;
       if (email) updateData.email = email;
       if (bio !== undefined) updateData.bio = bio || null;
       if (phone !== undefined) updateData.phone = phone || null;
 
-      // Handle image removal
       if (removeImage === "true") {
         if (existingUser.profileImage) {
           const oldImagePath = path.join(process.cwd(), existingUser.profileImage);
@@ -197,9 +195,7 @@ export class AuthController {
         updateData.profileImage = "";
       }
 
-      // Handle new image upload
       if (req.file) {
-        // Delete old image if exists
         if (existingUser.profileImage) {
           const oldImagePath = path.join(process.cwd(), existingUser.profileImage);
           if (fs.existsSync(oldImagePath)) {
@@ -210,7 +206,6 @@ export class AuthController {
         updateData.profileImage = `/uploads/${req.file.filename}`;
       }
 
-      // Update user in database
       const updatedUser = await UserModel.findByIdAndUpdate(id, updateData, {
         new: true,
         runValidators: true,

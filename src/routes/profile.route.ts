@@ -24,16 +24,18 @@
 import { Router } from "express";
 import { ProfileController } from "../controllers/profile.contoller";
 import { upload } from "../middleware/upload.middleware";
-
-
+import { isAuthenticated } from "../middleware/admin.middleware"; // ✅ middleware to ensure user is logged in
 
 const profileController = new ProfileController();
 const router = Router();
 
-// POST route to update profile (with optional image)
-router.post("/update", upload.single("image"), profileController.updateProfile);
+// ✅ GET route to fetch currently logged-in user's profile
+router.get("/", isAuthenticated, profileController.getMyProfile.bind(profileController));
 
-// GET route to get user profile by userId
-router.get("/:userId", profileController.getProfile);
+// ✅ POST route to update profile (with optional image)
+router.post("/update", upload.single("image"), profileController.updateProfile.bind(profileController));
+
+// ✅ GET route to get user profile by userId
+router.get("/:userId", profileController.getProfile.bind(profileController));
 
 export default router;
