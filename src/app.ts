@@ -78,7 +78,7 @@ const app: Application = express();
 
 // ✅ CORS options
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://localhost:3005", "http://localhost:8000"],
+  origin: ["http://localhost:3000", "http://localhost:3005", "http://localhost:5000"],
   credentials: true, // ✅ allow cookies/authorization headers
 };
 app.use(cors(corsOptions));
