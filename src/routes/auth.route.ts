@@ -1,5 +1,5 @@
 //for mobile
-//// import { Router } from "express";
+// import { Router } from "express";
 // import { AuthController } from "../controllers/auth.controller";
 
 // let authController = new AuthController();
@@ -11,6 +11,7 @@
 // export default router;
 
 
+//for web
 //for web
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
@@ -24,11 +25,14 @@ const router = Router();
 // ✅ Existing routes (not changed)
 router.post("/login", authController.login);
 router.post("/register", authController.register);
+// POST /api/auth/forgot-password
+router.post("/forgot-password", authController.forgotPassword);
+
 
 // ✅ NEW: Update user profile with optional image
 // PUT /api/auth/:id
 router.put("/:id", isAuthenticated, upload.single("image"), authController.updateUser);
 //ajha ko
-// router.post("/reset-password/:token", authController.resetPassword);
+router.post("/reset-password/:token", authController.resetPassword);
 
 export default router;
