@@ -1,3 +1,4 @@
+// for mobile
 // import { Request, Response } from "express";
 // import { UserModel } from "../models/user.model";
 // import path from "path";
@@ -319,6 +320,7 @@
 //   }
 // }
 
+
 import { Request, Response } from "express";
 import { UserModel } from "../models/user.model";
 import path from "path";
@@ -333,7 +335,6 @@ export class AdminController {
     try {
       const { username, email, password, firstName, lastName, role } = req.body;
 
-      // Validate required fields
       if (!username || !email || !password) {
         return res.status(400).json({
           success: false,
@@ -341,7 +342,6 @@ export class AdminController {
         });
       }
 
-      // Check if email already exists
       const existingUser = await UserModel.findOne({ email });
       if (existingUser) {
         return res.status(400).json({
@@ -350,7 +350,6 @@ export class AdminController {
         });
       }
 
-      // Check if username already exists
       const existingUsername = await UserModel.findOne({ username });
       if (existingUsername) {
         return res.status(400).json({
@@ -359,31 +358,24 @@ export class AdminController {
         });
       }
 
-      // Hash the password before saving
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Prepare user data
       const userData: any = {
         username,
         email,
         password: hashedPassword,
         firstName: firstName || "",
         lastName: lastName || "",
-        role: role || "user", // Default role is "user"
+        role: role || "user",
       };
 
-      // If image was uploaded, add it
       if (req.file) {
         userData.profileImage = `/uploads/${req.file.filename}`;
       }
 
-      // Create user in database
       const newUser = await UserModel.create(userData);
 
-      console.log("✅ User created:", newUser.email);
-
-      // Return success (don't return password)
       return res.status(201).json({
         success: true,
         message: "User created successfully",
@@ -398,7 +390,6 @@ export class AdminController {
         },
       });
     } catch (error: any) {
-      console.error("❌ Create user error:", error);
       return res.status(500).json({
         success: false,
         message: error.message || "Failed to create user",
@@ -406,17 +397,31 @@ export class AdminController {
     }
   }
 
-  // ✅ 2. GET ALL USERS
-  // GET /api/admin/users
+  // ✅ 2. GET ALL USERS WITH PAGINATION (UPDATED)
+  // GET /api/admin/users?page=1&limit=10
   async getAllUsers(req: Request, res: Response) {
     try {
-      // Fetch all users, but don't return the password field
-      const users = await UserModel.find().select("-password").sort({ createdAt: -1 });
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+
+      const users = await UserModel.find()
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const totalUsers = await UserModel.countDocuments();
 
       return res.status(200).json({
         success: true,
         message: "Users fetched successfully",
-        count: users.length,
+        pagination: {
+          totalUsers,
+          page,
+          limit,
+          totalPages: Math.ceil(totalUsers / limit),
+        },
         data: users.map((user) => ({
           id: user._id,
           username: user.username,
@@ -430,7 +435,6 @@ export class AdminController {
         })),
       });
     } catch (error: any) {
-      console.error("❌ Get all users error:", error);
       return res.status(500).json({
         success: false,
         message: error.message || "Failed to fetch users",
@@ -444,7 +448,6 @@ export class AdminController {
     try {
       const { id } = req.params;
 
-      // Find user by ID, don't return password
       const user = await UserModel.findById(id).select("-password");
 
       if (!user) {
@@ -471,7 +474,6 @@ export class AdminController {
         },
       });
     } catch (error: any) {
-      console.error("❌ Get user by ID error:", error);
       return res.status(500).json({
         success: false,
         message: error.message || "Failed to fetch user",
@@ -486,7 +488,6 @@ export class AdminController {
       const { id } = req.params;
       const { username, email, firstName, lastName, role, bio, phone, removeImage } = req.body;
 
-      // Check if user exists
       const existingUser = await UserModel.findById(id);
       if (!existingUser) {
         return res.status(404).json({
@@ -495,7 +496,6 @@ export class AdminController {
         });
       }
 
-      // If email is being changed, check if new email already exists
       if (email && email !== existingUser.email) {
         const emailExists = await UserModel.findOne({ email });
         if (emailExists) {
@@ -506,7 +506,6 @@ export class AdminController {
         }
       }
 
-      // If username is being changed, check if new username already exists
       if (username && username !== existingUser.username) {
         const usernameExists = await UserModel.findOne({ username });
         if (usernameExists) {
@@ -517,7 +516,6 @@ export class AdminController {
         }
       }
 
-      // Prepare update data
       const updateData: any = {};
 
       if (username) updateData.username = username;
@@ -528,39 +526,26 @@ export class AdminController {
       if (bio !== undefined) updateData.bio = bio || null;
       if (phone !== undefined) updateData.phone = phone || null;
 
-      // Handle image removal
       if (removeImage === "true") {
-        // Delete old image file from disk if exists
         if (existingUser.profileImage) {
           const oldImagePath = path.join(process.cwd(), existingUser.profileImage);
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-            console.log("🗑️ Old image deleted:", oldImagePath);
-          }
+          if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
         }
         updateData.profileImage = "";
       }
 
-      // Handle new image upload
       if (req.file) {
-        // Delete old image file from disk if exists
         if (existingUser.profileImage) {
           const oldImagePath = path.join(process.cwd(), existingUser.profileImage);
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-            console.log("🗑️ Old image deleted:", oldImagePath);
-          }
+          if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
         }
         updateData.profileImage = `/uploads/${req.file.filename}`;
       }
 
-      // Update user in database
       const updatedUser = await UserModel.findByIdAndUpdate(id, updateData, {
         new: true,
         runValidators: true,
       });
-
-      console.log("✅ User updated:", updatedUser?.email);
 
       return res.status(200).json({
         success: true,
@@ -580,7 +565,6 @@ export class AdminController {
         },
       });
     } catch (error: any) {
-      console.error("❌ Update user error:", error);
       return res.status(500).json({
         success: false,
         message: error.message || "Failed to update user",
@@ -594,7 +578,6 @@ export class AdminController {
     try {
       const { id } = req.params;
 
-      // Don't allow deleting yourself
       const currentUser = (req as any).user;
       if (currentUser.id === id) {
         return res.status(400).json({
@@ -603,7 +586,6 @@ export class AdminController {
         });
       }
 
-      // Find user first to get image path
       const user = await UserModel.findById(id);
       if (!user) {
         return res.status(404).json({
@@ -612,26 +594,18 @@ export class AdminController {
         });
       }
 
-      // Delete user's image file from disk if exists
       if (user.profileImage) {
         const imagePath = path.join(process.cwd(), user.profileImage);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
-          console.log("🗑️ User image deleted:", imagePath);
-        }
+        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
       }
 
-      // Delete user from database
       await UserModel.findByIdAndDelete(id);
-
-      console.log("✅ User deleted:", user.email);
 
       return res.status(200).json({
         success: true,
         message: "User deleted successfully",
       });
     } catch (error: any) {
-      console.error("❌ Delete user error:", error);
       return res.status(500).json({
         success: false,
         message: error.message || "Failed to delete user",
