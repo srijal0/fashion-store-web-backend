@@ -10,8 +10,6 @@
 
 // export default router;
 
-
-//for web
 //for web
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
